@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ساعدني — خدمات للطلاب المغتربين</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    *{box-sizing:border-box;font-family:'Cairo',sans-serif;margin:0;padding:0}
+    body{background:linear-gradient(135deg,#e9f0ff,#f5f7ff);color:#111;line-height:1.6}
+
+    nav{background:#fff;display:flex;justify-content:center;gap:30px;padding:12px;border-bottom:1px solid #ddd;box-shadow:0 2px 6px rgba(0,0,0,0.05);position:sticky;top:0;z-index:2000}
+    nav.hidden{display:none;} 
+    nav a{font-weight:bold;color:#3358ff;text-decoration:none;font-size:18px;padding:8px 14px;border-radius:8px;transition:.3s;cursor:pointer;}
+    nav a:hover{background:#eef2ff}
+
+    header{background:#fff;padding:15px;text-align:center;border-bottom:1px solid #ddd;box-shadow:0 2px 6px rgba(0,0,0,0.05)}
+    .logo{font-size:24px;color:#3358ff;font-weight:bold;}
+    .logo span{background:linear-gradient(45deg,#3358ff,#6c5ce7);color:#fff;padding:10px 14px;border-radius:12px}
+
+    main{max-width:1000px;margin:40px auto;padding:0 20px}
+    .card{background:#fff;padding:35px;border-radius:14px;box-shadow:0 6px 25px rgba(0,0,0,0.08);margin-bottom:40px;position:relative}
+
+    button{background:#3358ff;color:#fff;border:none;padding:12px;border-radius:10px;cursor:pointer;font-weight:bold;font-size:16px;transition:0.3s;width:100%}
+    button:hover{background:#2647d9;transform:scale(1.03)}
+
+    textarea,input{padding:12px;border:1px solid #ccc;border-radius:10px;font-size:16px;transition:0.3s;width:100%}
+    textarea:focus,input:focus{border-color:#3358ff;outline:none;box-shadow:0 0 8px rgba(51,88,255,0.2)}
+
+    .services{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:25px;margin-top:20px}
+    .service{background:#fff;border-radius:12px;padding:25px;text-align:center;box-shadow:0 5px 20px rgba(0,0,0,0.05);cursor:pointer;transition:0.3s;position:relative;overflow:hidden}
+    .service::before{content:'';position:absolute;top:0;left:0;width:100%;height:6px;background:linear-gradient(45deg,#3358ff,#6c5ce7)}
+    .service:hover{transform:translateY(-6px);box-shadow:0 10px 25px rgba(0,0,0,0.1)}
+    .coming-soon{opacity:0.6;cursor:not-allowed}
+    .soon{background:#ff4757;color:#fff;padding:4px 8px;border-radius:6px;font-size:13px;display:inline-block;margin-top:4px}
+
+    .back-btn{position:absolute;top:10px;left:10px;background:#3358ff;color:#fff;font-weight:bold;border:none;padding:5px 10px;font-size:14px;border-radius:6px;cursor:pointer;}
+    .back-btn:hover{background:#2647d9;color:#fff}
+
+    .card .card-title{margin-top:6px;}
+    .pay-box{background:#f8faff;border:1px solid #dce3ff;border-radius:12px;padding:25px;text-align:center;box-shadow:0 5px 15px rgba(0,0,0,0.05)}
+    .pay-option{margin-top:15px}
+
+    .popup{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;z-index:2000;visibility:hidden;opacity:0;transition:0.3s}
+    .popup.show{visibility:visible;opacity:1;}
+    .popup-content{background:#fff;padding:25px 35px;border-radius:12px;text-align:center;animation:pop 0.3s ease;}
+    @keyframes pop{from{transform:scale(0.8)}to{transform:scale(1)}}
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo"> ساعدنى<span>Sa3dny </span></div>
+</header>
+
+<nav id="navbar" class="hidden">
+  <a id="navHome">الصفحة الرئيسية</a>
+</nav>
+
+<main id="pageContainer"></main>
+
+<div class="popup" id="popup">
+  <div class="popup-content">
+    <h3 id="popupTitle"></h3>
+    <p id="popupMsg"></p>
+    <button id="popupCloseBtn">حسناً</button>
+  </div>
+</div>
+
+<footer style="text-align:center;margin:30px 0;color:#333;font-weight:bold;background:#eef2ff;padding:10px;border-radius:10px">
+  📞 الخط الساخن: <strong>01023354598</strong>
+</footer>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getFirestore, collection, addDoc, doc, updateDoc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBSQiym1b4hEqn5o0NJzfjGmSrvKZwCJ48",
+  authDomain: "sa3dnyassuit-38790.firebaseapp.com",
+  projectId: "sa3dnyassuit-38790",
+  storageBucket: "sa3dnyassuit-38790.firebasestorage.app",
+  messagingSenderId: "175464011304",
+  appId: "1:175464011304:web:760fcfe4fdb28dabe8871d",
+  measurementId: "G-MJNFGNCQ45"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const analytics = getAnalytics(app);
+
+const container = document.getElementById('pageContainer');
+const navbar = document.getElementById('navbar');
+const popup = document.getElementById('popup');
+const popupTitle = document.getElementById('popupTitle');
+const popupMsg = document.getElementById('popupMsg');
+const popupCloseBtn = document.getElementById('popupCloseBtn');
+
+popupCloseBtn.addEventListener('click', () => popup.classList.remove('show'));
+popup.addEventListener('click', e => { if(e.target===popup) popup.classList.remove('show'); });
+
+async function initStats() {
+  const statsRef = doc(db, "appStats", "main");
+  const statsSnap = await getDoc(statsRef);
+  if(!statsSnap.exists()) {
+    await setDoc(statsRef, {
+      startClicks:0, homeClicks:0, eduClicks:0, deliveryPay:0,
+      services:{install:0, clean:0, maintain:0, paint:0, plumbing:0, electric:0},
+      requestsCount:{}
+    });
+  }
+}
+await initStats();
+
+async function getStats() { const statsRef = doc(db,"appStats","main"); const snap = await getDoc(statsRef); return snap.exists()?snap.data():null; }
+async function updateStats(newStats) { const statsRef = doc(db,"appStats","main"); await updateDoc(statsRef,newStats); }
+
+function escapeHtml(str){ if(!str) return ''; return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;'); }
+function toggleNavbar(show){ if(show) navbar.classList.remove('hidden'); else navbar.classList.add('hidden'); }
+
+async function render(page,data){
+  const stats = await getStats();
+  if(page==='start') toggleNavbar(false); else toggleNavbar(true);
+
+  let html;
+  if(page==='start'){ html=`<div class='card' style='text-align:center'><h2>مرحبًا بك في منصة ساعدني</h2><p style='margin:12px 0 25px'>اضغط على الزر للبدء</p><button id='goHome'>انطلق 🚀</button></div>`; }
+  else if(page==='home'){ 
+    html=`<div class='card'><h2 class="card-title">اختر نوع الخدمة</h2><div class='services'>
+      <div class='service' data-cat='home'>🏠 <h3>الخدمات المنزلية</h3></div>
+      <div class='service' data-cat='edu'>📘 <h3>الخدمات التعليمية</h3></div>
+      <div class='service coming-soon'>💉 <h3>الخدمات الطبية</h3><span class='soon'>قريبًا</span></div>
+      <div class='service coming-soon'>🙌 <h3>خدمة التسكين </h3><span class='soon'>قريبًا</span></div>
+    </div></div>`; 
+  }
+  else if(page==='homeServices'){
+    html=`<div class='card'><button class='back-btn' id='backHome'>⟵ رجوع</button><h2 class="card-title">الخدمات المنزلية</h2><div class='services'>
+      <div class='service' data-id='install'>🔧 <h3>تركيب أجهزة</h3></div>
+      <div class='service' data-id='clean'>🧹 <h3>تنظيف</h3></div>
+      <div class='service' data-id='maintain'>🪛 <h3>صيانة</h3></div>
+      <div class='service coming-soon'>🎨 <h3>دهان</h3><span class='soon'>قريبًا</span></div>
+      <div class='service' data-id='plumbing'>🚰 <h3>سباكة</h3></div>
+      <div class='service' data-id='electric'>💡 <h3>كهرباء</h3></div>
+    </div></div>`;
+  }
+  else if(page==='request'){
+    const title = escapeHtml(data?.title);
+    html=`<div class='card'><button class='back-btn' id='goBack'>⟵ رجوع</button>
+      <h2 class="card-title" id='reqTitle'>${title}</h2>
+      <form id='requestForm'>
+        <textarea id='reqProblem' placeholder='وصف المشكلة' required></textarea>
+        <input id='reqAddress' placeholder='العنوان' required>
+        <input id='reqPhone' placeholder='رقم الهاتف' required>
+        <button type='submit'>إرسال الطلب</button>
+      </form>
+    </div>`;
+  }
+  else if(page==='payment'){
+    html=`<div class='card'><h2 class="card-title">اختيار طريقة الدفع</h2><div class='pay-box'>
+      <p>اختر طريقة الدفع:</p>
+      <div class='pay-option coming-soon'><button disabled>💳 الدفع بالفيزا — قريبًا</button></div>
+      <div class='pay-option'><button id='payOnDelivery'>💵 الدفع عند الوصول</button></div>
+    </div></div>`;
+  }
+
+  container.innerHTML=html;
+  attachEvents(page,data);
+}
+
+function attachEvents(page,data){
+  document.getElementById('navHome')?.addEventListener('click',()=>render('home'));
+
+  if(page==='start'){
+    document.getElementById('goHome')?.addEventListener('click', async ()=>{ 
+      const stats = await getStats(); stats.startClicks++; await updateStats({startClicks: stats.startClicks}); 
+      render('home'); 
+    });
+  }
+
+  if(page==='home'){
+    document.querySelector("[data-cat='home']")?.addEventListener('click', async ()=>{ 
+      const stats = await getStats(); stats.homeClicks++; await updateStats({homeClicks: stats.homeClicks}); 
+      render('homeServices'); 
+    });
+    document.querySelector("[data-cat='edu']")?.addEventListener('click', async ()=>{ 
+      render('request',{title:'طلب خدمة تعليمية', service:'الخدمات التعليمية'}); 
+    });
+  }
+
+  if(page==='homeServices'){
+    document.getElementById('backHome')?.addEventListener('click', ()=>render('home'));
+    document.querySelectorAll('.service[data-id]').forEach(el=>{
+      el.addEventListener('click', async ()=>{
+        const id=el.dataset.id;
+        const stats = await getStats();
+        if(stats.services.hasOwnProperty(id)){ stats.services[id]++; await updateStats({services: stats.services}); }
+
+        stats.requestsCount = stats.requestsCount || {};
+        stats.requestsCount[id] = (stats.requestsCount[id] || 0); // عدد الطلبات سيزيد عند الإرسال
+
+        await updateStats({requestsCount: stats.requestsCount});
+        const title = el.querySelector('h3')?.innerText || 'طلب خدمة';
+        render('request',{title, service:id});
+      });
+    });
+  }
+
+  if(page==='request'){
+    document.getElementById('goBack')?.addEventListener('click', ()=>render('home'));
+    document.getElementById('requestForm')?.addEventListener('submit', async e=>{
+      e.preventDefault(); 
+      const problem=document.getElementById('reqProblem').value;
+      const address=document.getElementById('reqAddress').value;
+      const phone=document.getElementById('reqPhone').value;
+      const title=document.getElementById('reqTitle').innerText;
+      const service = data?.service || title;
+
+      if(phone.length!==11){ 
+        popupTitle.innerText="خطأ"; 
+        popupMsg.innerText="رقم الهاتف يجب أن يكون 11 رقمًا فقط"; 
+        popup.classList.add('show'); 
+        return; 
+      }
+
+      try{
+        await addDoc(collection(db,"requests"),{
+          title,
+          problem,
+          address,
+          phone,
+          service,
+          createdAt: new Date()
+        });
+
+        const stats = await getStats();
+        stats.requestsCount = stats.requestsCount || {};
+        stats.requestsCount[service] = (stats.requestsCount[service] || 0) + 1;
+        await updateStats({requestsCount: stats.requestsCount});
+
+        render('payment');
+      } catch(err){
+        popupTitle.innerText="خطأ"; 
+        popupMsg.innerText="حدث خطأ أثناء إرسال الطلب"; 
+        popup.classList.add('show');
+      }
+    });
+  }
+
+  if(page==='payment'){
+    document.getElementById('payOnDelivery')?.addEventListener('click', async ()=>{
+      const stats = await getStats();
+      stats.deliveryPay++; await updateStats({deliveryPay: stats.deliveryPay});
+      popupTitle.innerText='تم الطلب'; popupMsg.innerText='سيتم الدفع عند الوصول.'; popup.classList.add('show'); render('home');
+    });
+  }
+}
+
+// Initial render
+render('start');
+</script>
+</body>
+</html>
